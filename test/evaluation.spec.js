@@ -35,7 +35,7 @@ module.exports.addTests = function({testRunner, expect}) {
       const result = await page.evaluate(() => 7 * 3);
       expect(result).toBe(21);
     });
-    (bigint ? it : xit)('should transfer BigInt', async({page, server}) => {
+    (bigint ? it_fails_ffox : xit)('should transfer BigInt', async({page, server}) => {
       const result = await page.evaluate(a => a, BigInt(42));
       expect(result).toBe(BigInt(42));
     });
@@ -121,9 +121,9 @@ module.exports.addTests = function({testRunner, expect}) {
     });
     it('should reject promise with exception', async({page, server}) => {
       let error = null;
-      await page.evaluate(() => not.existing.object.property).catch(e => error = e);
+      await page.evaluate(() => not_existing_object.property).catch(e => error = e);
       expect(error).toBeTruthy();
-      expect(error.message).toContain('not is not defined');
+      expect(error.message).toContain('not_existing_object');
     });
     it('should support thrown strings as error messages', async({page, server}) => {
       let error = null;
@@ -143,7 +143,7 @@ module.exports.addTests = function({testRunner, expect}) {
       expect(result).not.toBe(object);
       expect(result).toEqual(object);
     });
-    (bigint ? it : xit)('should return BigInt', async({page, server}) => {
+    (bigint ? it_fails_ffox : xit)('should return BigInt', async({page, server}) => {
       const result = await page.evaluate(() => BigInt(42));
       expect(result).toBe(BigInt(42));
     });
@@ -226,7 +226,11 @@ module.exports.addTests = function({testRunner, expect}) {
       expect(error.message).toContain('JSHandles can be evaluated only in the context they were created');
     });
     it('should simulate a user gesture', async({page, server}) => {
-      const result = await page.evaluate(() => document.execCommand('copy'));
+      const result = await page.evaluate(() => {
+        document.body.appendChild(document.createTextNode('test'));
+        document.execCommand('selectAll');
+        return document.execCommand('copy');
+      });
       expect(result).toBe(true);
     });
     it('should throw a nice error after a navigation', async({page, server}) => {
@@ -250,6 +254,13 @@ module.exports.addTests = function({testRunner, expect}) {
     it_fails_ffox('should transfer 100Mb of data from page to node.js', async({page, server}) => {
       const a = await page.evaluate(() => Array(100 * 1024 * 1024 + 1).join('a'));
       expect(a.length).toBe(100 * 1024 * 1024);
+    });
+    it('should throw error with detailed information on exception inside promise ', async({page, server}) => {
+      let error = null;
+      await page.evaluate(() => new Promise(() => {
+        throw new Error('Error in promise');
+      })).catch(e => error = e);
+      expect(error.message).toContain('Error in promise');
     });
   });
 
