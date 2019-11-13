@@ -6,6 +6,8 @@
 - API Translations: [中文|Chinese](https://zhaoqize.github.io/puppeteer-api-zh_CN/#/)
 - Troubleshooting: [troubleshooting.md](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md)
 - Releases per Chromium Version:
+  * Chromium 79.0.3942.0 - [Puppeteer v2.0.0](https://github.com/GoogleChrome/puppeteer/blob/v2.0.0/docs/api.md)
+  * Chromium 78.0.3882.0 - [Puppeteer v1.20.0](https://github.com/GoogleChrome/puppeteer/blob/v1.20.0/docs/api.md)
   * Chromium 77.0.3803.0 - [Puppeteer v1.19.0](https://github.com/GoogleChrome/puppeteer/blob/v1.19.0/docs/api.md)
   * Chromium 76.0.3803.0 - [Puppeteer v1.17.0](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md)
   * Chromium 75.0.3765.0 - [Puppeteer v1.15.0](https://github.com/GoogleChrome/puppeteer/blob/v1.15.0/docs/api.md)
@@ -107,7 +109,10 @@
   * [page.coverage](#pagecoverage)
   * [page.deleteCookie(...cookies)](#pagedeletecookiecookies)
   * [page.emulate(options)](#pageemulateoptions)
-  * [page.emulateMedia(mediaType)](#pageemulatemediamediatype)
+  * [page.emulateMedia(type)](#pageemulatemediatype)
+  * [page.emulateMediaFeatures(features)](#pageemulatemediafeaturesfeatures)
+  * [page.emulateMediaType(type)](#pageemulatemediatypetype)
+  * [page.emulateTimezone(timezoneId)](#pageemulatetimezonetimezoneid)
   * [page.evaluate(pageFunction[, ...args])](#pageevaluatepagefunction-args)
   * [page.evaluateHandle(pageFunction[, ...args])](#pageevaluatehandlepagefunction-args)
   * [page.evaluateOnNewDocument(pageFunction[, ...args])](#pageevaluateonnewdocumentpagefunction-args)
@@ -423,12 +428,13 @@ The following is a typical example of using Puppeteer to drive automation:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://www.google.com');
   // other actions...
   await browser.close();
-});
+})();
 ```
 
 #### puppeteer.connect(options)
@@ -476,13 +482,14 @@ devices can be found in [lib/DeviceDescriptors.js](https://github.com/GoogleChro
 const puppeteer = require('puppeteer');
 const iPhone = puppeteer.devices['iPhone 6'];
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.emulate(iPhone);
   await page.goto('https://www.google.com');
   // other actions...
   await browser.close();
-});
+})();
 ```
 
 > **NOTE** The old way (Puppeteer versions <= v1.14.0) devices can be obtained with `require('puppeteer/DeviceDescriptors')`.
@@ -530,7 +537,7 @@ try {
     - `hasTouch`<[boolean]> Specifies if viewport supports touch events. Defaults to `false`
     - `isLandscape` <[boolean]> Specifies if viewport is in landscape mode. Defaults to `false`.
   - `args` <[Array]<[string]>> Additional arguments to pass to the browser instance. The list of Chromium flags can be found [here](http://peter.sh/experiments/chromium-command-line-switches/).
-  - `ignoreDefaultArgs` <[boolean]|[Array]<[string]>> If `true`, then do not use [`puppeteer.defaultArgs()`](#puppeteerdefaultargs-options). If an array is given, then filter out the given default arguments. Dangerous option; use with care. Defaults to `false`.
+  - `ignoreDefaultArgs` <[boolean]|[Array]<[string]>> If `true`, then do not use [`puppeteer.defaultArgs()`](#puppeteerdefaultargsoptions). If an array is given, then filter out the given default arguments. Dangerous option; use with care. Defaults to `false`.
   - `handleSIGINT` <[boolean]> Close the browser process on Ctrl-C. Defaults to `true`.
   - `handleSIGTERM` <[boolean]> Close the browser process on SIGTERM. Defaults to `true`.
   - `handleSIGHUP` <[boolean]> Close the browser process on SIGHUP. Defaults to `true`.
@@ -625,18 +632,20 @@ An example of using a [Browser] to create a [Page]:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://example.com');
   await browser.close();
-});
+})();
 ```
 
 An example of disconnecting from and reconnecting to a [Browser]:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   // Store the endpoint to be able to reconnect to Chromium
   const browserWSEndpoint = browser.wsEndpoint();
   // Disconnect puppeteer from Chromium
@@ -646,7 +655,7 @@ puppeteer.launch().then(async browser => {
   const browser2 = await puppeteer.connect({browserWSEndpoint});
   // Close Chromium
   await browser2.close();
-});
+})();
 ```
 #### event: 'disconnected'
 Emitted when Puppeteer gets disconnected from the Chromium instance. This might happen because of one of the following:
@@ -692,13 +701,15 @@ Closes Chromium and all of its pages (if any were opened). The [Browser] object 
 Creates a new incognito browser context. This won't share cookies/cache with other browser contexts.
 
 ```js
-const browser = await puppeteer.launch();
-// Create a new incognito browser context.
-const context = await browser.createIncognitoBrowserContext();
-// Create a new page in a pristine context.
-const page = await context.newPage();
-// Do stuff
-await page.goto('https://example.com');
+(async () => {
+  const browser = await puppeteer.launch();
+  // Create a new incognito browser context.
+  const context = await browser.createIncognitoBrowserContext();
+  // Create a new page in a pristine context.
+  const page = await context.newPage();
+  // Do stuff
+  await page.goto('https://example.com');
+})();
 ```
 
 #### browser.defaultBrowserContext()
@@ -913,12 +924,13 @@ This example creates a page, navigates it to a URL, and then saves a screenshot:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://example.com');
   await page.screenshot({path: 'screenshot.png'});
   await browser.close();
-});
+})();
 ```
 
 The Page class emits various events (described below) which can be handled using any of Node's native [`EventEmitter`](https://nodejs.org/api/events.html#events_class_eventemitter) methods, such as `on`, `once` or `removeListener`.
@@ -1264,19 +1276,86 @@ To aid emulation, puppeteer provides a list of device descriptors which can be o
 const puppeteer = require('puppeteer');
 const iPhone = puppeteer.devices['iPhone 6'];
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.emulate(iPhone);
   await page.goto('https://www.google.com');
   // other actions...
   await browser.close();
-});
+})();
 ```
 
 List of all available devices is available in the source code: [DeviceDescriptors.js](https://github.com/GoogleChrome/puppeteer/blob/master/lib/DeviceDescriptors.js).
 
-#### page.emulateMedia(mediaType)
-- `mediaType` <?[string]> Changes the CSS media type of the page. The only allowed values are `'screen'`, `'print'` and `null`. Passing `null` disables media emulation.
+#### page.emulateMedia(type)
+- `type` <?[string]> Changes the CSS media type of the page. The only allowed values are `'screen'`, `'print'` and `null`. Passing `null` disables CSS media emulation.
+- returns: <[Promise]>
+
+**Note:** This method is deprecated, and only kept around as an alias for backwards compatibility. Use [`page.emulateMediaType(type)`](#pageemulatemediatypetype) instead.
+
+#### page.emulateMediaFeatures(features)
+- `features` <?[Array]<[Object]>> Given an array of media feature objects, emulates CSS media features on the page. Each media feature object must have the following properties:
+  - `name` <[string]> The CSS media feature name. Supported names are `'prefers-colors-scheme'` and `'prefers-reduced-motion'`.
+  - `value` <[string]> The value for the given CSS media feature.
+- returns: <[Promise]>
+
+```js
+await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches));
+// → true
+await page.evaluate(() => matchMedia('(prefers-color-scheme: light)').matches));
+// → false
+await page.evaluate(() => matchMedia('(prefers-color-scheme: no-preference)').matches));
+// → false
+
+await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches));
+// → true
+await page.evaluate(() => matchMedia('(prefers-color-scheme: no-preference)').matches));
+// → false
+
+await page.emulateMediaFeatures([
+  { name: 'prefers-color-scheme', value: 'dark' },
+  { name: 'prefers-reduced-motion', value: 'reduce' },
+]);
+await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches));
+// → true
+await page.evaluate(() => matchMedia('(prefers-color-scheme: light)').matches));
+// → false
+await page.evaluate(() => matchMedia('(prefers-color-scheme: no-preference)').matches));
+// → false
+await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches));
+// → true
+await page.evaluate(() => matchMedia('(prefers-color-scheme: no-preference)').matches));
+// → false
+```
+
+#### page.emulateMediaType(type)
+- `type` <?[string]> Changes the CSS media type of the page. The only allowed values are `'screen'`, `'print'` and `null`. Passing `null` disables CSS media emulation.
+- returns: <[Promise]>
+
+```js
+await page.evaluate(() => matchMedia('screen').matches));
+// → true
+await page.evaluate(() => matchMedia('print').matches));
+// → true
+
+await page.emulateMediaType('print');
+await page.evaluate(() => matchMedia('screen').matches));
+// → false
+await page.evaluate(() => matchMedia('print').matches));
+// → true
+
+await page.emulateMediaType(null);
+await page.evaluate(() => matchMedia('screen').matches));
+// → true
+await page.evaluate(() => matchMedia('print').matches));
+// → true
+```
+
+#### page.emulateTimezone(timezoneId)
+- `timezoneId` <?[string]> Changes the timezone of the page. See [ICU’s `metaZones.txt`](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Passing `null` disables timezone emulation.
 - returns: <[Promise]>
 
 #### page.evaluate(pageFunction[, ...args])
@@ -1381,7 +1460,8 @@ An example of adding an `md5` function into the page:
 const puppeteer = require('puppeteer');
 const crypto = require('crypto');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   page.on('console', msg => console.log(msg.text()));
   await page.exposeFunction('md5', text =>
@@ -1394,7 +1474,7 @@ puppeteer.launch().then(async browser => {
     console.log(`md5 of ${myString} is ${myHash}`);
   });
   await browser.close();
-});
+})();
 ```
 
 An example of adding a `window.readfile` function into the page:
@@ -1403,7 +1483,8 @@ An example of adding a `window.readfile` function into the page:
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   page.on('console', msg => console.log(msg.text()));
   await page.exposeFunction('readfile', async filePath => {
@@ -1422,8 +1503,7 @@ puppeteer.launch().then(async browser => {
     console.log(content);
   });
   await browser.close();
-});
-
+})();
 ```
 
 #### page.focus(selector)
@@ -1791,7 +1871,8 @@ An example of a naïve request interceptor that aborts all image requests:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.setRequestInterception(true);
   page.on('request', interceptedRequest => {
@@ -1802,7 +1883,7 @@ puppeteer.launch().then(async browser => {
   });
   await page.goto('https://example.com');
   await browser.close();
-});
+})();
 ```
 
 > **NOTE** Enabling request interception disables page caching.
@@ -1895,6 +1976,12 @@ This is a shortcut for [page.mainFrame().url()](#frameurl)
 #### page.waitFor(selectorOrFunctionOrTimeout[, options[, ...args]])
 - `selectorOrFunctionOrTimeout` <[string]|[number]|[function]> A [selector], predicate or timeout to wait for
 - `options` <[Object]> Optional waiting parameters
+  - `visible` <[boolean]> wait for element to be present in DOM and to be visible. Defaults to `false`.
+  - `timeout` <[number]> maximum time to wait for in milliseconds. Defaults to `30000` (30 seconds). Pass `0` to disable timeout. The default value can be changed by using the [page.setDefaultTimeout(timeout)](#pagesetdefaulttimeouttimeout) method.
+  - `hidden` <[boolean]> wait for element to not be found in the DOM or to be hidden. Defaults to `false`.
+  - `polling` <[string]|[number]> An interval at which the `pageFunction` is executed, defaults to `raf`. If `polling` is a number, then it is treated as an interval in milliseconds at which the function would be executed. If `polling` is a string, then it can be one of the following values:
+    - `raf` - to constantly execute `pageFunction` in `requestAnimationFrame` callback. This is the tightest polling mode which is suitable to observe styling changes.
+    - `mutation` - to execute `pageFunction` on every DOM mutation.
 - `...args` <...[Serializable]|[JSHandle]> Arguments to pass to  `pageFunction`
 - returns: <[Promise]<[JSHandle]>> Promise which resolves to a JSHandle of the success value
 
@@ -1959,13 +2046,14 @@ The `waitForFunction` can be used to observe viewport size change:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   const watchDog = page.waitForFunction('window.innerWidth < 100');
   await page.setViewport({width: 50, height: 50});
   await watchDog;
   await browser.close();
-});
+})();
 ```
 
 To pass arguments from node.js to the predicate of `page.waitForFunction` function:
@@ -2041,16 +2129,18 @@ This method works across navigations:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   let currentURL;
   page
     .waitForSelector('img')
     .then(() => console.log('First URL with image: ' + currentURL));
-  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com'])
+  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com']) {
     await page.goto(currentURL);
+  }
   await browser.close();
-});
+})();
 ```
 Shortcut for [page.mainFrame().waitForSelector(selector[, options])](#framewaitforselectorselector-options).
 
@@ -2070,16 +2160,18 @@ This method works across navigations:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   let currentURL;
   page
     .waitForXPath('//img')
     .then(() => console.log('First URL with image: ' + currentURL));
-  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com'])
+  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com']) {
     await page.goto(currentURL);
+  }
   await browser.close();
-});
+})();
 ```
 Shortcut for [page.mainFrame().waitForXPath(xpath[, options])](#framewaitforxpathxpath-options).
 
@@ -2137,7 +2229,7 @@ The Accessibility class provides methods for inspecting Chromium's accessibility
 
 Accessibility is a very platform-specific thing. On different platforms, there are different screen readers that might have wildly different output.
 
-Blink - Chrome's rendering engine - has a concept of "accessibility tree", which is than translated into different platform-specific APIs. Accessibility namespace gives users
+Blink - Chrome's rendering engine - has a concept of "accessibility tree", which is then translated into different platform-specific APIs. Accessibility namespace gives users
 access to the Blink Accessibility Tree.
 
 Most of the accessibility tree gets filtered out when converting from Blink AX Tree to Platform-specific AX-Tree or by assistive technologies themselves. By default, Puppeteer tries to approximate this filtering, exposing only the "interesting" nodes of the tree.
@@ -2421,7 +2513,8 @@ An example of using `Dialog` class:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   page.on('dialog', async dialog => {
     console.log(dialog.message());
@@ -2429,7 +2522,7 @@ puppeteer.launch().then(async browser => {
     await browser.close();
   });
   page.evaluate(() => alert('1'));
-});
+})();
 ```
 
 #### dialog.accept([promptText])
@@ -2483,7 +2576,8 @@ An example of dumping frame tree:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://www.google.com/chrome/browser/canary.html');
   dumpFrameTree(page.mainFrame(), '');
@@ -2491,10 +2585,11 @@ puppeteer.launch().then(async browser => {
 
   function dumpFrameTree(frame, indent) {
     console.log(indent + frame.url());
-    for (let child of frame.childFrames())
+    for (const child of frame.childFrames()) {
       dumpFrameTree(child, indent + '  ');
+    }
   }
-});
+})();
 ```
 
 An example of getting text from an iframe element:
@@ -2820,13 +2915,14 @@ The `waitForFunction` can be used to observe viewport size change:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   const watchDog = page.mainFrame().waitForFunction('window.innerWidth < 100');
   page.setViewport({width: 50, height: 50});
   await watchDog;
   await browser.close();
-});
+})();
 ```
 
 To pass arguments from node.js to the predicate of `page.waitForFunction` function:
@@ -2875,16 +2971,18 @@ This method works across navigations:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   let currentURL;
   page.mainFrame()
     .waitForSelector('img')
     .then(() => console.log('First URL with image: ' + currentURL));
-  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com'])
+  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com']) {
     await page.goto(currentURL);
+  }
   await browser.close();
-});
+})();
 ```
 
 #### frame.waitForXPath(xpath[, options])
@@ -2903,16 +3001,18 @@ This method works across navigations:
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   let currentURL;
   page.mainFrame()
     .waitForXPath('//img')
     .then(() => console.log('First URL with image: ' + currentURL));
-  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com'])
+  for (currentURL of ['https://example.com', 'https://google.com', 'https://bbc.com']) {
     await page.goto(currentURL);
+  }
   await browser.close();
-});
+})();
 ```
 
 ### class: ExecutionContext
@@ -3102,13 +3202,14 @@ ElementHandle represents an in-page DOM element. ElementHandles can be created w
 ```js
 const puppeteer = require('puppeteer');
 
-puppeteer.launch().then(async browser => {
+(async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://example.com');
   const hrefElement = await page.$('a');
   await hrefElement.click();
   // ...
-});
+})();
 ```
 
 ElementHandle prevents DOM element from garbage collection unless the handle is [disposed](#elementhandledispose). ElementHandles are auto-disposed when their origin frame gets navigated.
