@@ -72,6 +72,24 @@ module.exports.addTests = function({testRunner, expect, CHROME}) {
       });
       await page.goto(server.PREFIX + '/rrredirect');
     });
+    // @see https://github.com/GoogleChrome/puppeteer/issues/4743
+    it('should be able to remove headers', async({page, server}) => {
+      await page.setRequestInterception(true);
+      page.on('request', request => {
+        const headers = Object.assign({}, request.headers(), {
+          foo: 'bar',
+          origin: undefined, // remove "origin" header
+        });
+        request.continue({ headers });
+      });
+
+      const [serverRequest] = await Promise.all([
+        server.waitForRequest('/empty.html'),
+        page.goto(server.PREFIX + '/empty.html')
+      ]);
+
+      expect(serverRequest.headers.origin).toBe(undefined);
+    });
     it('should contain referer header', async({page, server}) => {
       await page.setRequestInterception(true);
       const requests = [];
@@ -115,7 +133,7 @@ module.exports.addTests = function({testRunner, expect, CHROME}) {
       expect(response.ok()).toBe(true);
     });
     // @see https://github.com/GoogleChrome/puppeteer/issues/4337
-    xit('should work with redirect inside sync XHR', async({page, server}) => {
+    it('should work with redirect inside sync XHR', async({page, server}) => {
       await page.goto(server.EMPTY_PAGE);
       server.setRedirect('/logo.png', '/pptr.png');
       await page.setRequestInterception(true);

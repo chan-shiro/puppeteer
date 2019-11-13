@@ -77,6 +77,19 @@ module.exports.addTests = function({testRunner, expect, headless, puppeteer, CHR
       await newPage.close();
       expect(newPage.isClosed()).toBe(true);
     });
+    it_fails_ffox('should terminate network waiters', async({context, server}) => {
+      const newPage = await context.newPage();
+      const results = await Promise.all([
+        newPage.waitForRequest(server.EMPTY_PAGE).catch(e => e),
+        newPage.waitForResponse(server.EMPTY_PAGE).catch(e => e),
+        newPage.close()
+      ]);
+      for (let i = 0; i < 2; i++) {
+        const message = results[i].message;
+        expect(message).toContain('Target closed');
+        expect(message).not.toContain('Timeout');
+      }
+    });
   });
 
   describe('Page.Events.Load', function() {
@@ -903,7 +916,8 @@ module.exports.addTests = function({testRunner, expect, headless, puppeteer, CHR
       expect(await page.evaluate(() => __injected)).toBe(35);
     });
 
-    it_fails_ffox('should throw when added with content to the CSP page', async({page, server}) => {
+    // @see https://github.com/GoogleChrome/puppeteer/issues/4840
+    xit('should throw when added with content to the CSP page', async({page, server}) => {
       await page.goto(server.PREFIX + '/csp.html');
       let error = null;
       await page.addScriptTag({ content: 'window.__injected = 35;' }).catch(e => error = e);

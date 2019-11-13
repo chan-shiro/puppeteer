@@ -1,14 +1,12 @@
 
 # Puppeteer API <!-- GEN:version -->Tip-Of-Tree<!-- GEN:stop-->
-<!-- GEN:empty-if-release -->
-#### Next Release: `July 18, 2019`
-<!-- GEN:stop -->
+<!-- GEN:empty-if-release --><!-- GEN:stop -->
 
 - Interactive Documentation: https://pptr.dev
 - API Translations: [中文|Chinese](https://zhaoqize.github.io/puppeteer-api-zh_CN/#/)
 - Troubleshooting: [troubleshooting.md](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md)
 - Releases per Chromium Version:
-  * Chromium 77.0.3803.0 - [Puppeteer v1.18.1](https://github.com/GoogleChrome/puppeteer/blob/v1.18.0/docs/api.md)
+  * Chromium 77.0.3803.0 - [Puppeteer v1.19.0](https://github.com/GoogleChrome/puppeteer/blob/v1.19.0/docs/api.md)
   * Chromium 76.0.3803.0 - [Puppeteer v1.17.0](https://github.com/GoogleChrome/puppeteer/blob/v1.17.0/docs/api.md)
   * Chromium 75.0.3765.0 - [Puppeteer v1.15.0](https://github.com/GoogleChrome/puppeteer/blob/v1.15.0/docs/api.md)
   * Chromium 74.0.3723.0 - [Puppeteer v1.13.0](https://github.com/GoogleChrome/puppeteer/blob/v1.13.0/docs/api.md)
@@ -152,6 +150,7 @@
   * [page.url()](#pageurl)
   * [page.viewport()](#pageviewport)
   * [page.waitFor(selectorOrFunctionOrTimeout[, options[, ...args]])](#pagewaitforselectororfunctionortimeout-options-args)
+  * [page.waitForFileChooser([options])](#pagewaitforfilechooseroptions)
   * [page.waitForFunction(pageFunction[, options[, ...args]])](#pagewaitforfunctionpagefunction-options-args)
   * [page.waitForNavigation([options])](#pagewaitfornavigationoptions)
   * [page.waitForRequest(urlOrPredicate[, options])](#pagewaitforrequesturlorpredicate-options)
@@ -182,6 +181,10 @@
 - [class: Tracing](#class-tracing)
   * [tracing.start([options])](#tracingstartoptions)
   * [tracing.stop()](#tracingstop)
+- [class: FileChooser](#class-filechooser)
+  * [fileChooser.accept(filePaths)](#filechooseracceptfilepaths)
+  * [fileChooser.cancel()](#filechoosercancel)
+  * [fileChooser.isMultiple()](#filechooserismultiple)
 - [class: Dialog](#class-dialog)
   * [dialog.accept([promptText])](#dialogacceptprompttext)
   * [dialog.defaultValue()](#dialogdefaultvalue)
@@ -232,6 +235,8 @@
 - [class: JSHandle](#class-jshandle)
   * [jsHandle.asElement()](#jshandleaselement)
   * [jsHandle.dispose()](#jshandledispose)
+  * [jsHandle.evaluate(pageFunction[, ...args])](#jshandleevaluatepagefunction-args)
+  * [jsHandle.evaluateHandle(pageFunction[, ...args])](#jshandleevaluatehandlepagefunction-args)
   * [jsHandle.executionContext()](#jshandleexecutioncontext)
   * [jsHandle.getProperties()](#jshandlegetproperties)
   * [jsHandle.getProperty(propertyName)](#jshandlegetpropertypropertyname)
@@ -248,6 +253,8 @@
   * [elementHandle.click([options])](#elementhandleclickoptions)
   * [elementHandle.contentFrame()](#elementhandlecontentframe)
   * [elementHandle.dispose()](#elementhandledispose)
+  * [elementHandle.evaluate(pageFunction[, ...args])](#elementhandleevaluatepagefunction-args)
+  * [elementHandle.evaluateHandle(pageFunction[, ...args])](#elementhandleevaluatehandlepagefunction-args)
   * [elementHandle.executionContext()](#elementhandleexecutioncontext)
   * [elementHandle.focus()](#elementhandlefocus)
   * [elementHandle.getProperties()](#elementhandlegetproperties)
@@ -257,6 +264,7 @@
   * [elementHandle.jsonValue()](#elementhandlejsonvalue)
   * [elementHandle.press(key[, options])](#elementhandlepresskey-options)
   * [elementHandle.screenshot([options])](#elementhandlescreenshotoptions)
+  * [elementHandle.select(...values)](#elementhandleselectvalues)
   * [elementHandle.tap()](#elementhandletap)
   * [elementHandle.toString()](#elementhandletostring)
   * [elementHandle.type(text[, options])](#elementhandletypetext-options)
@@ -483,7 +491,7 @@ puppeteer.launch().then(async browser => {
 - returns: <[Object]>
   - `TimeoutError` <[function]> A class of [TimeoutError].
 
-Puppeteer methods might throw errors if they are unable to fufill a request. For example, [page.waitForSelector(selector[, options])](#pagewaitforselectorselector-options)
+Puppeteer methods might throw errors if they are unable to fulfill a request. For example, [page.waitForSelector(selector[, options])](#pagewaitforselectorselector-options)
 might fail if the selector doesn't match any nodes during the given timeframe.
 
 For certain types of errors Puppeteer uses specific error classes.
@@ -1727,6 +1735,7 @@ This setting will change the default maximum time for the following methods and 
 - [page.reload([options])](#pagereloadoptions)
 - [page.setContent(html[, options])](#pagesetcontenthtml-options)
 - [page.waitFor(selectorOrFunctionOrTimeout[, options[, ...args]])](#pagewaitforselectororfunctionortimeout-options-args)
+- [page.waitForFileChooser([options])](#pagewaitforfilechooseroptions)
 - [page.waitForFunction(pageFunction[, options[, ...args]])](#pagewaitforfunctionpagefunction-options-args)
 - [page.waitForNavigation([options])](#pagewaitfornavigationoptions)
 - [page.waitForRequest(urlOrPredicate[, options])](#pagewaitforrequesturlorpredicate-options)
@@ -1863,8 +1872,8 @@ Sends a `keydown`, `keypress`/`input`, and `keyup` event for each character in t
 To press a special key, like `Control` or `ArrowDown`, use [`keyboard.press`](#keyboardpresskey-options).
 
 ```js
-page.type('#mytextarea', 'Hello'); // Types instantly
-page.type('#mytextarea', 'World', {delay: 100}); // Types slower, like a user
+await page.type('#mytextarea', 'Hello'); // Types instantly
+await page.type('#mytextarea', 'World', {delay: 100}); // Types slower, like a user
 ```
 
 Shortcut for [page.mainFrame().type(selector, text[, options])](#frametypeselector-text-options).
@@ -1913,6 +1922,28 @@ await page.waitFor(selector => !!document.querySelector(selector), {}, selector)
 ```
 
 Shortcut for [page.mainFrame().waitFor(selectorOrFunctionOrTimeout[, options[, ...args]])](#framewaitforselectororfunctionortimeout-options-args).
+
+#### page.waitForFileChooser([options])
+- `options` <[Object]> Optional waiting parameters
+  - `timeout` <[number]> Maximum wait time in milliseconds, defaults to 30 seconds, pass `0` to disable the timeout. The default value can be changed by using the [page.setDefaultTimeout(timeout)](#pagesetdefaulttimeouttimeout) method.
+- returns: <[Promise]<[FileChooser]>> A promise that resolves after a page requests a file picker.
+
+> **NOTE** In non-headless Chromium, this method results in the native file picker dialog **not showing up** for the user.
+
+This method is typically coupled with an action that triggers file choosing.
+The following example clicks a button that issues a file chooser, and then
+responds with `/tmp/myfile.pdf` as if a user has selected this file.
+
+```js
+const [fileChooser] = await Promise.all([
+  page.waitForFileChooser(),
+  page.click('#upload-file-button'), // some button that triggers file selection
+]);
+await fileChooser.accept(['/tmp/myfile.pdf']);
+```
+
+> **NOTE** This must be called *before* the file chooser is launched. It will not return a currently active file chooser.
+
 
 #### page.waitForFunction(pageFunction[, options[, ...args]])
 - `pageFunction` <[function]|[string]> Function to be evaluated in browser context
@@ -2255,8 +2286,8 @@ Sends a `keydown`, `keypress`/`input`, and `keyup` event for each character in t
 To press a special key, like `Control` or `ArrowDown`, use [`keyboard.press`](#keyboardpresskey-options).
 
 ```js
-page.keyboard.type('Hello'); // Types instantly
-page.keyboard.type('World', {delay: 100}); // Types slower, like a user
+await page.keyboard.type('Hello'); // Types instantly
+await page.keyboard.type('World', {delay: 100}); // Types slower, like a user
 ```
 
 > **NOTE** Modifier keys DO NOT effect `keyboard.type`. Holding down `Shift` will not type the text in upper case.
@@ -2350,6 +2381,37 @@ Only one trace can be active at a time per browser.
 
 #### tracing.stop()
 - returns: <[Promise]<[Buffer]>> Promise which resolves to buffer with trace data.
+
+### class: FileChooser
+
+[FileChooser] objects are returned via the ['page.waitForFileChooser'](#pagewaitforfilechooseroptions) method.
+
+File choosers let you react to the page requesting for a file.
+
+An example of using [FileChooser]:
+
+```js
+const [fileChooser] = await Promise.all([
+  page.waitForFileChooser(),
+  page.click('#upload-file-button'), // some button that triggers file selection
+]);
+await fileChooser.accept(['/tmp/myfile.pdf']);
+```
+
+> **NOTE** In browsers, only one file chooser can be opened at a time.
+> All file choosers must be accepted or canceled. Not doing so will prevent subsequent file choosers from appearing.
+
+#### fileChooser.accept(filePaths)
+- `filePaths` <[Array]<[string]>> Accept the file chooser request with given paths. If some of the  `filePaths` are relative paths, then they are resolved relative to the [current working directory](https://nodejs.org/api/process.html#process_process_cwd).
+- returns: <[Promise]>
+
+#### fileChooser.cancel()
+- returns: <[Promise]>
+
+Closes the file chooser without selecting any files.
+
+#### fileChooser.isMultiple()
+- returns: <[boolean]> Whether file chooser allow for [multiple](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#attr-multiple) file selection.
 
 ### class: Dialog
 
@@ -2706,8 +2768,8 @@ Sends a `keydown`, `keypress`/`input`, and `keyup` event for each character in t
 To press a special key, like `Control` or `ArrowDown`, use [`keyboard.press`](#keyboardpresskey-options).
 
 ```js
-frame.type('#mytextarea', 'Hello'); // Types instantly
-frame.type('#mytextarea', 'World', {delay: 100}); // Types slower, like a user
+await frame.type('#mytextarea', 'Hello'); // Types instantly
+await frame.type('#mytextarea', 'World', {delay: 100}); // Types slower, like a user
 ```
 
 #### frame.url()
@@ -2971,6 +3033,34 @@ Returns either `null` or the object handle itself, if the object handle is an in
 
 The `jsHandle.dispose` method stops referencing the element handle.
 
+#### jsHandle.evaluate(pageFunction[, ...args])
+- `pageFunction` <[function]\([Object]\)> Function to be evaluated in browser context
+- `...args` <...[Serializable]|[JSHandle]> Arguments to pass to `pageFunction`
+- returns: <[Promise]<[Serializable]>> Promise which resolves to the return value of `pageFunction`
+
+This method passes this handle as the first argument to `pageFunction`.
+
+If `pageFunction` returns a [Promise], then `handle.evaluate` would wait for the promise to resolve and return its value.
+
+Examples:
+```js
+const tweetHandle = await page.$('.tweet .retweets');
+expect(await tweetHandle.evaluate(node => node.innerText)).toBe('10');
+```
+
+#### jsHandle.evaluateHandle(pageFunction[, ...args])
+- `pageFunction` <[function]|[string]> Function to be evaluated
+- `...args` <...[Serializable]|[JSHandle]> Arguments to pass to `pageFunction`
+- returns: <[Promise]<[JSHandle]>> Promise which resolves to the return value of `pageFunction` as in-page object (JSHandle)
+
+This method passes this handle as the first argument to `pageFunction`.
+
+The only difference between `jsHandle.evaluate` and `jsHandle.evaluateHandle` is that `executionContext.evaluateHandle` returns in-page object (JSHandle).
+
+If the function passed to the `jsHandle.evaluateHandle` returns a [Promise], then `jsHandle.evaluateHandle` would wait for the promise to resolve and return its value.
+
+See [Page.evaluateHandle](#pageevaluatehandlepagefunction-args) for more details.
+
 #### jsHandle.executionContext()
 - returns: <[ExecutionContext]>
 
@@ -3131,6 +3221,34 @@ If the element is detached from DOM, the method throws an error.
 
 The `elementHandle.dispose` method stops referencing the element handle.
 
+#### elementHandle.evaluate(pageFunction[, ...args])
+- `pageFunction` <[function]\([Object]\)> Function to be evaluated in browser context
+- `...args` <...[Serializable]|[JSHandle]> Arguments to pass to `pageFunction`
+- returns: <[Promise]<[Serializable]>> Promise which resolves to the return value of `pageFunction`
+
+This method passes this handle as the first argument to `pageFunction`.
+
+If `pageFunction` returns a [Promise], then `handle.evaluate` would wait for the promise to resolve and return its value.
+
+Examples:
+```js
+const tweetHandle = await page.$('.tweet .retweets');
+expect(await tweetHandle.evaluate(node => node.innerText)).toBe('10');
+```
+
+#### elementHandle.evaluateHandle(pageFunction[, ...args])
+- `pageFunction` <[function]|[string]> Function to be evaluated
+- `...args` <...[Serializable]|[JSHandle]> Arguments to pass to `pageFunction`
+- returns: <[Promise]<[JSHandle]>> Promise which resolves to the return value of `pageFunction` as in-page object (JSHandle)
+
+This method passes this handle as the first argument to `pageFunction`.
+
+The only difference between `evaluateHandle.evaluate` and `evaluateHandle.evaluateHandle` is that `executionContext.evaluateHandle` returns in-page object (JSHandle).
+
+If the function passed to the `evaluateHandle.evaluateHandle` returns a [Promise], then `evaluateHandle.evaluateHandle` would wait for the promise to resolve and return its value.
+
+See [Page.evaluateHandle](#pageevaluatehandlepagefunction-args) for more details.
+
 #### elementHandle.executionContext()
 - returns: <[ExecutionContext]>
 
@@ -3198,6 +3316,18 @@ If `key` is a single character and no modifier keys besides `Shift` are being he
 This method scrolls element into view if needed, and then uses [page.screenshot](#pagescreenshotoptions) to take a screenshot of the element.
 If the element is detached from DOM, the method throws an error.
 
+#### elementHandle.select(...values)
+- `...values` <...[string]> Values of options to select. If the `<select>` has the `multiple` attribute, all values are considered, otherwise only the first one is taken into account.
+- returns: <[Promise]<[Array]<[string]>>> An array of option values that have been successfully selected.
+
+Triggers a `change` and `input` event once all the provided options have been selected.
+If there's no `<select>` element matching `selector`, the method throws an error.
+
+```js
+handle.select('blue'); // single selection
+handle.select('red', 'green', 'blue'); // multiple selections
+```
+
 #### elementHandle.tap()
 - returns: <[Promise]> Promise which resolves when the element is successfully tapped. Promise gets rejected if the element is detached from DOM.
 
@@ -3218,8 +3348,8 @@ Focuses the element, and then sends a `keydown`, `keypress`/`input`, and `keyup`
 To press a special key, like `Control` or `ArrowDown`, use [`elementHandle.press`](#elementhandlepresskey-options).
 
 ```js
-elementHandle.type('Hello'); // Types instantly
-elementHandle.type('World', {delay: 100}); // Types slower, like a user
+await elementHandle.type('Hello'); // Types instantly
+await elementHandle.type('World', {delay: 100}); // Types slower, like a user
 ```
 
 An example of typing into a text field and then submitting the form:
@@ -3626,50 +3756,51 @@ TimeoutError is emitted whenever certain operations are terminated due to timeou
 
 
 
+[AXNode]: #accessibilitysnapshotoptions "AXNode"
+[Accessibility]: #class-accessibility "Accessibility"
 [Array]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array "Array"
-[boolean]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Boolean_type "Boolean"
+[Body]: #class-body  "Body"
+[BrowserContext]: #class-browsercontext  "BrowserContext"
+[BrowserFetcher]: #class-browserfetcher  "BrowserFetcher"
+[Browser]: #class-browser  "Browser"
 [Buffer]: https://nodejs.org/api/buffer.html#buffer_class_buffer "Buffer"
-[function]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function "Function"
-[number]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Number_type "Number"
+[CDPSession]: #class-cdpsession  "CDPSession"
+[ChildProcess]: https://nodejs.org/api/child_process.html "ChildProcess"
+[ConnectionTransport]: ../lib/WebSocketTransport.js "ConnectionTransport"
+[ConsoleMessage]: #class-consolemessage "ConsoleMessage"
+[Coverage]: #class-coverage "Coverage"
+[Dialog]: #class-dialog "Dialog"
+[ElementHandle]: #class-elementhandle "ElementHandle"
+[Element]: https://developer.mozilla.org/en-US/docs/Web/API/element "Element"
+[Error]: https://nodejs.org/api/errors.html#errors_class_error "Error"
+[ExecutionContext]: #class-executioncontext "ExecutionContext"
+[FileChooser]: #class-filechooser "FileChooser"
+[Frame]: #class-frame "Frame"
+[JSHandle]: #class-jshandle "JSHandle"
+[Keyboard]: #class-keyboard "Keyboard"
+[Map]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map "Map"
+[Mouse]: #class-mouse "Mouse"
 [Object]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object "Object"
-[origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin "Origin"
 [Page]: #class-page "Page"
 [Promise]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise "Promise"
-[string]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#String_type "String"
-[stream.Readable]: https://nodejs.org/api/stream.html#stream_class_stream_readable "stream.Readable"
-[CDPSession]: #class-cdpsession  "CDPSession"
-[BrowserFetcher]: #class-browserfetcher  "BrowserFetcher"
-[BrowserContext]: #class-browsercontext  "BrowserContext"
-[Error]: https://nodejs.org/api/errors.html#errors_class_error "Error"
-[Frame]: #class-frame "Frame"
-[ConsoleMessage]: #class-consolemessage "ConsoleMessage"
-[ChildProcess]: https://nodejs.org/api/child_process.html "ChildProcess"
-[Coverage]: #class-coverage "Coverage"
-[iterator]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols "Iterator"
-[Response]: #class-response  "Response"
 [Request]: #class-request  "Request"
-[Browser]: #class-browser  "Browser"
-[TimeoutError]: #class-timeouterror "TimeoutError"
-[Body]: #class-body  "Body"
-[Element]: https://developer.mozilla.org/en-US/docs/Web/API/element "Element"
-[Keyboard]: #class-keyboard "Keyboard"
-[Dialog]: #class-dialog  "Dialog"
-[JSHandle]: #class-jshandle "JSHandle"
-[ExecutionContext]: #class-executioncontext "ExecutionContext"
-[Mouse]: #class-mouse "Mouse"
-[Map]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map "Map"
-[selector]: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors "selector"
-[Tracing]: #class-tracing "Tracing"
-[ElementHandle]: #class-elementhandle "ElementHandle"
-[UIEvent.detail]: https://developer.mozilla.org/en-US/docs/Web/API/UIEvent/detail "UIEvent.detail"
-[Serializable]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#Description "Serializable"
-[Touchscreen]: #class-touchscreen "Touchscreen"
-[Target]: #class-target "Target"
-[USKeyboardLayout]: ../lib/USKeyboardLayout.js "USKeyboardLayout"
-[xpath]: https://developer.mozilla.org/en-US/docs/Web/XPath "xpath"
-[UnixTime]: https://en.wikipedia.org/wiki/Unix_time "Unix Time"
+[Response]: #class-response  "Response"
 [SecurityDetails]: #class-securitydetails "SecurityDetails"
+[Serializable]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#Description "Serializable"
+[Target]: #class-target "Target"
+[TimeoutError]: #class-timeouterror "TimeoutError"
+[Touchscreen]: #class-touchscreen "Touchscreen"
+[Tracing]: #class-tracing "Tracing"
+[UIEvent.detail]: https://developer.mozilla.org/en-US/docs/Web/API/UIEvent/detail "UIEvent.detail"
+[USKeyboardLayout]: ../lib/USKeyboardLayout.js "USKeyboardLayout"
+[UnixTime]: https://en.wikipedia.org/wiki/Unix_time "Unix Time"
 [Worker]: #class-worker "Worker"
-[Accessibility]: #class-accessibility "Accessibility"
-[AXNode]: #accessibilitysnapshotoptions "AXNode"
-[ConnectionTransport]: ../lib/WebSocketTransport.js "ConnectionTransport"
+[boolean]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Boolean_type "Boolean"
+[function]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function "Function"
+[iterator]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols "Iterator"
+[number]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Number_type "Number"
+[origin]: https://developer.mozilla.org/en-US/docs/Glossary/Origin "Origin"
+[selector]: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors "selector"
+[stream.Readable]: https://nodejs.org/api/stream.html#stream_class_stream_readable "stream.Readable"
+[string]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#String_type "String"
+[xpath]: https://developer.mozilla.org/en-US/docs/Web/XPath "xpath"
